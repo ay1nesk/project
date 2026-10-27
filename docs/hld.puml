@@ -1,0 +1,86 @@
+@startuml hld
+' HabitBot — HLD (High-Level Design), component-диаграмма
+' Рендер: https://www.plantuml.com/plantuml/uml/  или  plantuml -tpng docs/hld.puml
+
+title HabitBot — архитектура верхнего уровня (HLD)
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam ArrowColor #555555
+skinparam actorStyle awesome
+skinparam rectangle {
+  BackgroundColor #F7F9FC
+  BorderColor #8AA1C1
+}
+skinparam component {
+  BackgroundColor #E8F0FE
+  BorderColor #4A6FA5
+}
+skinparam database {
+  BackgroundColor #FFF4E0
+  BorderColor #C08A2E
+}
+skinparam cloud {
+  BackgroundColor #EEF7EE
+  BorderColor #5B9A5B
+}
+
+left to right direction
+
+' ===== Акторы =====
+actor "Пользователь\n(Free / Pro)" as User
+actor "Администратор" as Admin
+
+' ===== Внешняя платформа Telegram =====
+cloud "Telegram" {
+  component "Клиент Telegram\n(Android / iOS /\nDesktop / Web)" as TgClient
+  component "Telegram Bot API" as BotAPI
+  component "Telegram Payments" as TgPay
+}
+
+' ===== Наша система =====
+rectangle "VPS (Ubuntu, сервер в РФ)" {
+  rectangle "Приложение HabitBot (Python 3.11, aiogram 3)" {
+    component "Dispatcher + Middlewares\n(сессия БД, логирование,\nпроверка прав и тарифа)" as Disp
+    component "Handlers\nstart · habits · reminders\nstats · subscription · admin" as Handlers
+    component "Сервисы (бизнес-логика)\nпривычки · отметки и серии\nстатистика · подписка" as Services
+    component "Планировщик\n(APScheduler)" as Sched
+    component "Слой доступа к данным\n(SQLAlchemy)" as Repo
+  }
+  database "PostgreSQL\nusers · habits · checkins\npayments · scheduler_jobs" as DB
+  database "Redis\n(состояние диалогов FSM)" as Redis
+  component "Резервное копирование\n(cron + pg_dump, 03:00)" as Backup
+}
+
+' ===== Прочие внешние сервисы =====
+cloud "ЮKassa\n(платёжный провайдер)" as Pay
+cloud "Облачное хранилище S3\n(бэкапы, 7 дней)" as S3
+cloud "UptimeRobot\n(мониторинг)" as Monitor
+
+' ===== Связи =====
+User --> TgClient : команды и кнопки
+Admin --> TgClient : /admin
+TgClient --> BotAPI : сообщения
+TgClient --> TgPay : оплата Pro
+
+BotAPI --> Disp : апдейты\n(HTTPS)
+Disp --> Handlers
+Disp --> Redis : FSM
+Handlers --> Services
+Sched --> Services : время\nнапоминания
+Services --> Repo
+Repo --> DB : SQL
+Sched --> DB : задания
+
+BotAPI <.. Handlers : ответы, счета
+BotAPI <.. Sched : напоминания
+
+TgPay --> Pay : проведение\nплатежа
+TgPay ..> BotAPI : successful_payment
+
+Backup --> DB : pg_dump
+Backup --> S3 : архив\n1 раз в сутки
+Monitor --> Disp : health-check\nкаждые 5 мин
+
+@enduml
