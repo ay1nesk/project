@@ -1,1 +1,16 @@
+# macOS
 .DS_Store
+
+# Секреты: токен бота и пароли — только в .env, в git не попадают (NFR-4.2)
+.env
+
+# Виртуальное окружение
+.venv/
+venv/
+
+# Кэш Python и тестов
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
