@@ -1,6 +1,6 @@
 import pytest
 
-from bot.config import ConfigError, load_settings
+from bot.config import DEFAULT_DATABASE_URL, ConfigError, load_settings
 
 TOKEN = "123456:TEST-token"
 
@@ -20,7 +20,8 @@ def test_defaults():
     assert settings.bot_token == TOKEN
     assert settings.log_level == "INFO"
     assert settings.admin_ids == frozenset()
-    assert settings.database_url is None
+    assert settings.database_url == DEFAULT_DATABASE_URL
+    assert settings.database_url.startswith("sqlite+aiosqlite:///")
     assert settings.redis_url is None
 
 
@@ -40,3 +41,8 @@ def test_log_level_is_validated():
     assert load_settings({"BOT_TOKEN": TOKEN, "LOG_LEVEL": "debug"}).log_level == "DEBUG"
     with pytest.raises(ConfigError, match="LOG_LEVEL"):
         load_settings({"BOT_TOKEN": TOKEN, "LOG_LEVEL": "LOUD"})
+
+
+def test_database_url_from_env():
+    url = "postgresql+asyncpg://habitbot:secret@localhost:5432/habitbot"
+    assert load_settings({"BOT_TOKEN": TOKEN, "DATABASE_URL": url}).database_url == url
