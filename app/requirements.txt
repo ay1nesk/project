@@ -5,9 +5,12 @@
 aiogram==3.31.0
 python-dotenv==1.2.4
 
-# База данных: PostgreSQL через SQLAlchemy + asyncpg, миграции Alembic (задачи #14, #15)
-SQLAlchemy==2.1.6
+# База данных (задачи #14, #15): SQLAlchemy в асинхронном режиме ([asyncio] ставит greenlet),
+# PostgreSQL через asyncpg на сервере, SQLite через aiosqlite при разработке и в тестах,
+# миграции — Alembic
+SQLAlchemy[asyncio]==2.1.6
 asyncpg==0.32.0
+aiosqlite==0.22.1
 alembic==1.20.1
 
 # Планировщик напоминаний (задача #22)

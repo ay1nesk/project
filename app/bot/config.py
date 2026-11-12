@@ -13,7 +13,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
+APP_DIR = Path(__file__).resolve().parent.parent
+ENV_FILE = APP_DIR / ".env"
+
+# Если DATABASE_URL не задан, при разработке используется файл SQLite в папке app.
+# На сервере DATABASE_URL указывает на PostgreSQL (postgresql+asyncpg://...).
+DEFAULT_DATABASE_URL = f"sqlite+aiosqlite:///{APP_DIR / 'habitbot.db'}"
 
 LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
@@ -27,7 +32,7 @@ class Settings:
     bot_token: str
     admin_ids: frozenset[int]
     log_level: str
-    database_url: str | None
+    database_url: str
     redis_url: str | None
 
     def is_admin(self, telegram_id: int) -> bool:
@@ -47,6 +52,10 @@ def _parse_admin_ids(raw: str) -> frozenset[int]:
             )
         ids.add(int(part))
     return frozenset(ids)
+
+
+def get_database_url(env: Mapping[str, str]) -> str:
+    return (env.get("DATABASE_URL") or "").strip() or DEFAULT_DATABASE_URL
 
 
 def load_settings(env: Mapping[str, str] | None = None) -> Settings:
@@ -74,7 +83,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         bot_token=bot_token,
         admin_ids=_parse_admin_ids(env.get("ADMIN_IDS", "")),
         log_level=log_level,
-        database_url=(env.get("DATABASE_URL") or "").strip() or None,
+        database_url=get_database_url(env),
         redis_url=(env.get("REDIS_URL") or "").strip() or None,
     )
 

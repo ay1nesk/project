@@ -121,6 +121,25 @@ HabitBot получил наивысшую и наиболее согласов�
 - простая статистика;
 - Pro-подписка (платные функции) на следующих этапах.
 
+## Запуск бота
+
+Все команды выполняются из папки `app`.
+
+1. Окружение и зависимости:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+2. Настройки: `cp .env.example .env` и впишите токен от @BotFather в `BOT_TOKEN`.
+   Если `DATABASE_URL` не задан, используется локальный файл SQLite `app/habitbot.db`;
+   на сервере укажите PostgreSQL: `postgresql+asyncpg://user:password@host:5432/habitbot`.
+3. Создать таблицы в базе: `alembic upgrade head`
+4. Запуск: `python -m bot`, остановка — Ctrl+C
+5. Автотесты: `python -m pytest`
+
+Схема базы данных: [docs/db-schema.puml](docs/db-schema.puml).
+
 ## Definition of Done
 
 Задача считается выполненной, если
