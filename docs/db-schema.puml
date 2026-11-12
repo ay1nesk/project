@@ -1,0 +1,57 @@
+@startuml db-schema
+' HabitBot — схема БД (задача #14). Рендер: https://www.plantuml.com/plantuml/uml/
+
+title HabitBot — схема базы данных
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam linetype ortho
+hide circle
+skinparam class {
+  BackgroundColor #E8F0FE
+  BorderColor #4A6FA5
+  HeaderBackgroundColor #C9DAF8
+}
+
+entity "users\nпользователи" as users {
+  * id : integer <<PK>>
+  --
+  * telegram_id : bigint <<unique>>
+  * first_name : varchar(64)
+    language_code : varchar(8)
+  * utc_offset_minutes : smallint = 180
+  * reminders_enabled : boolean = true
+  * plan : varchar(8) = 'free'  <i>free | pro</i>
+    pro_until : timestamptz
+  * is_active : boolean = true
+  * created_at : timestamptz
+}
+
+entity "habits\nпривычки" as habits {
+  * id : integer <<PK>>
+  --
+  * user_id : integer <<FK>> <<index>>
+  * title : varchar(50)
+  * schedule_days : smallint = 127  <i>Пн=1 … Вс=64</i>
+    remind_at : time
+  * reminders_enabled : boolean = true
+  * is_archived : boolean = false
+  * created_at : timestamptz
+    archived_at : timestamptz
+}
+
+entity "checkins\nотметки" as checkins {
+  * id : integer <<PK>>
+  --
+  * habit_id : integer <<FK>>
+  * date : date <<index>>
+  * status : varchar(8) = 'done'  <i>done | skipped</i>
+  * created_at : timestamptz
+  ..
+  unique (habit_id, date)
+}
+
+users ||--o{ habits : "1 — много\nON DELETE CASCADE"
+habits ||--o{ checkins : "1 — много\nON DELETE CASCADE"
+
+@enduml
